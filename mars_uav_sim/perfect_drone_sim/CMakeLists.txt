@@ -23,6 +23,12 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
+
+# include_directories(${YAML_CPP_INCLUDE_DIRS})
+# link_directories(${YAML_CPP_LIBRARY_DIRS})
+
 catkin_package(
         INCLUDE_DIRS include
         LIBRARIES
@@ -37,11 +43,13 @@ include_directories(
         ${catkin_INCLUDE_DIRS}
         ${Eigen3_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
+        ${YAML_CPP_INCLUDE_DIRS}
 )
 
 set(THIRD_PARTY
         ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
+        ${YAML_CPP_LIBRARIES}
 #        -ldw
         )
 

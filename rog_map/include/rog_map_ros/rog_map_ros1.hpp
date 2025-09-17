@@ -91,13 +91,15 @@ namespace rog_map {
             transformStamped.transform.rotation.y = odom_msg->pose.pose.orientation.y;
             transformStamped.transform.rotation.z = odom_msg->pose.pose.orientation.z;
             transformStamped.transform.rotation.w = odom_msg->pose.pose.orientation.w;
-            br_map_ego.sendTransform(transformStamped);
+            // br_map_ego.sendTransform(transformStamped);
         }
 
         void cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg) {
+            // std::cout << "cloudcallback" << std::endl;
             if (!robot_state_.rcv) {
                 return;
             }
+            // std::cout << "cloudcallback: Recieved robot state" << std::endl;
             double cbk_t = ros::Time::now().toSec();
             if (cbk_t - robot_state_.rcv_time > cfg_.odom_timeout) {
                 std::cout << YELLOW << " -- [ROS] Odom timeout, skip cloud callback." << RESET << std::endl;

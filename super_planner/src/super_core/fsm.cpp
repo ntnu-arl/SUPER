@@ -75,6 +75,7 @@ namespace fsm {
             ChangeState("ReplanTimerCallback", GENERATE_TRAJ);
         } else if (ret_code == SUCCESS || ret_code == FINISH) {
             gi_.new_goal = false;
+            std::cout << "callReplanOnce: Publishing trajectory" << std::endl;
             publishPolyTraj();
         }
 
@@ -150,6 +151,7 @@ namespace fsm {
                         finish_plan = true;
                     }
 
+                    std::cout << "callMainFsmOnce: Publishing trajectory" << std::endl;
                     publishPolyTraj();
 
                     ChangeState("MainFsmCallback", FOLLOW_TRAJ);

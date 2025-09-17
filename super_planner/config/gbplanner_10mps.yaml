@@ -1,13 +1,12 @@
 fsm:
   click_goal_en: true
   click_goal_topic: "/goal"
-  click_height: 1.5
+  click_height: -5.0 #1.5
   click_yaw_en: true
-  replan_rate: 10.0
+  replan_rate: 15.0
   cmd_topic: "/planning/pos_cmd"
   mpc_cmd_topic: "/planning_cmd/poly_traj"
   timer_en: true
-  use_time_from_start: true
 
 super_planner:
   backup_traj_en: true
@@ -17,17 +16,17 @@ super_planner:
   print_log: false
   visual_process: false
   frontend_in_known_free: false
-  goal_yaw_en: true
+  goal_yaw_en: false
   goal_vel_en: false
-  corridor_bound_dis: 1.0
-  corridor_line_max_length: 1.2
-  safe_corridor_line_max_length: 5.0
+  corridor_bound_dis: 3
+  corridor_line_max_length: 3
+  safe_corridor_line_max_length: 999
   iris_iter_num: 2
   obs_skip_num: 2
   replan_forward_dt: 0.1
-  planning_horizon: 7.0
+  planning_horizon: 30.0
   sensing_horizon: -1
-  receding_dis: 4.0
+  receding_dis: 15.0
   robot_r: 0.3
   yaw_dot_max: 3.0
   # Yaw mode: 1 heading to velocity, 2 heading to goal
@@ -41,11 +40,11 @@ traj_opt:
     print_optimizer_log: false
 
   boundary:
-    max_vel: 1.0
-    max_acc: 2.0
+    max_vel: 10.0
+    max_acc: 20.0
     max_jerk: 120.0
-    max_omg: 2.5
-    max_acc_thr: 20.0
+    max_omg: 5
+    max_acc_thr: 25
     min_acc_thr: 6.0
     penna_margin: 0.05
     # max_vel: 10.0
@@ -65,14 +64,14 @@ traj_opt:
     scale_factor: 1.0
     integral_reso: 15
     smooth_eps: 0.01
-    penna_t: 12000.0
-    penna_pos: 5.0e+6
-    penna_vel: 5.0e+5
-    penna_acc: 5.0e+5
-    penna_jerk: -5.0e+5
-    penna_attract: 1.0e+3
-    penna_omg:  5.0e+5
-    penna_thr: 1.0e+5
+    penna_t: 1.0e+8
+    penna_pos: 5.0e+8
+    penna_vel: 5.0e+8
+    penna_acc: 5.0e+8
+    penna_jerk: -5.0e+11
+    penna_attract: -1.0e+7
+    penna_omg: 5.0e+8
+    penna_thr: 5.0e+8
 
   backup_traj:
     uniform_time_en: true
@@ -84,14 +83,14 @@ traj_opt:
     scale_factor: 1.0
     integral_reso: 12
     smooth_eps: 0.01
-    penna_t: 1200.0
-    penna_ts: 1.0e+5
-    penna_pos: 1.0e+6
-    penna_vel: 1.0e+5
-    penna_acc: 1.0e+5
-    penna_jerk: -1.0e+5
-    penna_omg: 1.0e+5
-    penna_thr: 1.0e+5
+    penna_t: 1.0e+6
+    penna_ts: 1.0e+7
+    penna_pos: 1.0e+10
+    penna_vel: 1.0e+8
+    penna_acc: 1.0e+8
+    penna_jerk: -1.0e+8
+    penna_omg: 5.0e+8
+    penna_thr: 5.0e+8
 
   flatness:
     mass: 1.64
@@ -124,7 +123,7 @@ rog_map:
   frontier_extraction_en: false
 
   # Virtual ceil and ground
-  virtual_ceil_height: 4.0 #50.5
+  virtual_ceil_height: 50.5
   virtual_ground_height: -50.1
 
   load_pcd_en: false

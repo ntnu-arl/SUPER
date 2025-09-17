@@ -36,12 +36,14 @@
 #include "quadrotor_msgs/PositionCommand.h"
 #include "quadrotor_msgs/PolynomialTrajectory.h"
 
+#include "trajectory_msgs/MultiDOFJointTrajectory.h"
+
 
 namespace fsm {
     class FsmRos1 : public Fsm {
         ros::NodeHandle nh_;
         ros::Subscriber goal_sub_;
-        ros::Publisher cmd_pub, mpc_cmd_pub_, path_pub_;
+        ros::Publisher cmd_pub, mpc_cmd_pub_, path_pub_, multi_dof_traj_pub_;
         ros::Timer execution_timer_, replan_timer_, cmd_timer_;
         quadrotor_msgs::PositionCommand pid_cmd_;
         rog_map::ROGMapROS::Ptr map_ptr_;
@@ -74,6 +76,10 @@ namespace fsm {
             quadrotor_msgs::PolynomialTrajectory cmd_traj;
             getCommittedTrajectory(cmd_traj);
             mpc_cmd_pub_.publish(cmd_traj);
+
+            trajectory_msgs::MultiDOFJointTrajectory traj_msg;
+            getCommittedMultidofTrajectory(traj_msg);
+            multi_dof_traj_pub_.publish(traj_msg);
         }
 
         void getOneHeartBeatMsg(quadrotor_msgs::PolynomialTrajectory &heartbeat, bool &traj_finish) {
@@ -83,6 +89,141 @@ namespace fsm {
             double swt;
             planner_ptr_->getOneHeartbeatTime(swt, traj_finish);
             heartbeat.start_WT_pos = ros::Time(swt);
+        }
+
+        void getCommittedMultidofTrajectory(trajectory_msgs::MultiDOFJointTrajectory& traj_msg)
+        {
+            planner_ptr_->lockCommittedTraj();
+            const Trajectory pos_traj = planner_ptr_->getCommittedPositionTrajectory();
+            const Trajectory yaw_traj = planner_ptr_->getCommittedYawTrajectory();
+            planner_ptr_->unlockCommittedTraj();
+
+            traj_msg.header.stamp = ros::Time::now();
+            traj_msg.header.frame_id = "world";
+            traj_msg.joint_names.push_back("base_link");
+
+            double eval_t = 0.00;
+            double dt = 0.05;
+            Eigen::Vector3d last_pos = pos_traj.getPos(eval_t).cast<double>();
+            double t_sum = pos_traj.getTotalDuration();
+            while (eval_t + 1e-4 < t_sum) {
+                Eigen::Vector3d pos = pos_traj.getPos(eval_t).cast<double>();
+                Eigen::Vector3d vel = pos_traj.getVel(eval_t).cast<double>();
+
+                // if(last_pos - pos).norm() < 0.01 {
+                //     eval_t += 0.05;
+                //     continue;
+                // }
+
+                double yaw = 0.0;
+                double yaw_dot = 0.0;
+                if (!yaw_traj.empty()) {
+                    yaw = yaw_traj.getPos(eval_t).cast<double>()[0];
+                    // yaw -= M_PI;
+                    // if(yaw > M_PI) yaw -= 2 * M_PI;
+                    // if(yaw < -M_PI) yaw += 2 * M_PI;
+                }
+
+                trajectory_msgs::MultiDOFJointTrajectoryPoint point;
+                // Create transform
+                geometry_msgs::Transform transform;
+                transform.translation.x = pos(0);
+                transform.translation.y = pos(1);
+                transform.translation.z = pos(2);
+                
+                // Convert yaw to quaternion
+                Eigen::Quaternionf q;
+                q = Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+                // tf2::Quaternion q;
+                // q.setRPY(0, 0, yaw);
+                transform.rotation.x = q.x();
+                transform.rotation.y = q.y();
+                transform.rotation.z = q.z();
+                transform.rotation.w = q.w();
+
+                // Set velocities
+                geometry_msgs::Twist vel_msg;
+                vel_msg.linear.x = vel(0);
+                vel_msg.linear.y = vel(1);
+                vel_msg.linear.z = vel(2);
+                vel_msg.angular.z = yaw_dot;
+
+                // // Set accelerations
+                // geometry_msgs::Twist acc_msg;
+                // acc_msg.linear.x = acc(0);
+                // acc_msg.linear.y = acc(1);
+                // acc_msg.linear.z = acc(2);
+
+                point.transforms.push_back(transform);
+                point.velocities.push_back(vel_msg);
+                // point.accelerations.push_back(acc_msg);
+                if(cfg_.use_time_from_start)
+                    point.time_from_start = ros::Duration(eval_t);
+                else
+                    point.time_from_start = ros::Duration(dt);
+
+                traj_msg.points.push_back(point);
+                eval_t += dt;
+            }
+
+            // double t = 0;
+            // for (int i = 0; i < pos_traj.getPieceNum(); i++) {
+            //     // Sample points along each piece at a fixed dt
+            //     double dt = 0.1; // 10Hz sampling
+            //     for (double t_piece = 0; t_piece < pos_traj[i].getDuration(); t_piece += dt) {
+            //         trajectory_msgs::MultiDOFJointTrajectoryPoint point;
+                    
+            //         // Get position and derivatives at time t
+            //         Eigen::Vector3d pos = pos_traj[i].evaluate(t_piece);
+            //         Eigen::Vector3d vel = pos_traj[i].evaluateVel(t_piece);
+            //         Eigen::Vector3d acc = pos_traj[i].evaluateAcc(t_piece);
+
+            //         // Get yaw if available
+            //         double yaw = 0.0;
+            //         double yaw_dot = 0.0;
+            //         if (!yaw_traj.empty()) {
+            //             yaw = yaw_traj[i].evaluate(t_piece)[0];
+            //             yaw_dot = yaw_traj[i].evaluateVel(t_piece)[0];
+            //         }
+
+            //         // Create transform
+            //         geometry_msgs::Transform transform;
+            //         transform.translation.x = pos(0);
+            //         transform.translation.y = pos(1);
+            //         transform.translation.z = pos(2);
+                    
+            //         // Convert yaw to quaternion
+            //         Eigen::Quaternionf q;
+            //         q = AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+            //         // tf2::Quaternion q;
+            //         // q.setRPY(0, 0, yaw);
+            //         transform.rotation.x = q.x();
+            //         transform.rotation.y = q.y();
+            //         transform.rotation.z = q.z();
+            //         transform.rotation.w = q.w();
+
+            //         // Set velocities
+            //         geometry_msgs::Twist vel_msg;
+            //         vel_msg.linear.x = vel(0);
+            //         vel_msg.linear.y = vel(1);
+            //         vel_msg.linear.z = vel(2);
+            //         vel_msg.angular.z = yaw_dot;
+
+            //         // Set accelerations
+            //         geometry_msgs::Twist acc_msg;
+            //         acc_msg.linear.x = acc(0);
+            //         acc_msg.linear.y = acc(1);
+            //         acc_msg.linear.z = acc(2);
+
+            //         point.transforms.push_back(transform);
+            //         point.velocities.push_back(vel_msg);
+            //         point.accelerations.push_back(acc_msg);
+            //         point.time_from_start = ros::Duration(t + t_piece);
+
+            //         traj_msg.points.push_back(point);
+            //     }
+            //     t += pos_traj[i].getDuration();
+            // }
         }
 
         void getCommittedTrajectory(quadrotor_msgs::PolynomialTrajectory &cmd_traj) {
@@ -280,6 +421,7 @@ namespace fsm {
             planner_ptr_ = std::make_shared<SuperPlanner>(cfg_path, ros_ptr_, map_ptr_);
             cmd_pub = nh_.advertise<quadrotor_msgs::PositionCommand>(cfg_.cmd_topic, 10);
             mpc_cmd_pub_ = nh_.advertise<quadrotor_msgs::PolynomialTrajectory>(cfg_.mpc_cmd_topic, 10);
+            multi_dof_traj_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectory>("multi_dof_traj", 10);
             path_pub_ = nh_.advertise<nav_msgs::Path>("fsm/path", 100);
 
             int cmd_cnt = 0;

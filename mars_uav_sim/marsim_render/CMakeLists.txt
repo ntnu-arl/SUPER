@@ -27,6 +27,7 @@ endif()
 add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
 
 # Find required packages
+find_package(catkin REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(GLEW REQUIRED)

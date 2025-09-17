@@ -107,6 +107,7 @@ namespace perfect_drone {
 
         void publishPC() {
             pcl::PointCloud<marsim::PointType>::Ptr local_map(new pcl::PointCloud<marsim::PointType>);
+            std::cout << "Position: " << position_.transpose() << std::endl;
             render_ptr_->renderOnceInWorld(position_.cast<float>(), q_.cast<float>(), ros::Time::now().toSec(),
                                            local_map);
             sensor_msgs::PointCloud2 pc_msg;

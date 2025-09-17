@@ -32,10 +32,12 @@ find_package(catkin REQUIRED COMPONENTS
         visualization_msgs
         message_filters
         rog_map
-        yaml-cpp
         tf
+        trajectory_msgs
 )
-find_package(yaml-cpp REQUIRED)
+# find_package(yaml-cpp REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
 find_package(Boost REQUIRED COMPONENTS system filesystem regex iostreams)
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
@@ -81,21 +83,21 @@ target_link_libraries(fsm_node
         ${THIRD_PARTY}
 )
 
-#add_executable(read_replan_log
-#        Apps/read_replan_log.cpp
-#)
-#target_link_libraries(read_replan_log
-#        super
-#        -lncurses
-#        ${THIRD_PARTY}
-#)
-#
-#
-#add_executable(traj_opt_tuning
-#        Apps/traj_opt_tuning.cpp
-#)
-#target_link_libraries(traj_opt_tuning
-#        super
-#        -lncurses
-#        ${THIRD_PARTY}
-#)
+add_executable(read_replan_log
+        Apps/read_replan_log.cpp
+)
+target_link_libraries(read_replan_log
+        super
+        -lncurses
+        ${THIRD_PARTY}
+)
+
+
+add_executable(traj_opt_tuning
+        Apps/traj_opt_tuning.cpp
+)
+target_link_libraries(traj_opt_tuning
+        super
+        -lncurses
+        ${THIRD_PARTY}
+)
