@@ -50,6 +50,7 @@ namespace super_planner {
         /* some part of exp traj may belong to last backup, record this */
         double on_backup_start_TT_{-1}, on_backup_end_TT_{-1};
         bool first_part_exp_has_backup_traj_{false};
+        bool no_update_{false};
 
 
         /* some flags */
@@ -86,6 +87,15 @@ namespace super_planner {
             mtx_.unlock();
         }
 
+        bool noUpdate() const {
+            return no_update_;
+        }
+
+        void setNoUpdateFlag(const bool & in) {
+            LOCK_G
+            no_update_ = in;
+        }
+
 
         bool setTrajectory(const ExpTraj&exp_traj,
             const BackupTraj & backup_traj) {
@@ -105,6 +115,7 @@ namespace super_planner {
             flag_empty_ = false;
             flag_backup_traj_avilibale_ = true;
             checkFirstPartBackupTraj(exp_traj);
+            no_update_ = exp_traj.noUpdate();
             return true;
         }
 
@@ -117,6 +128,7 @@ namespace super_planner {
             backup_traj_start_TT_ = 99999999;
             flag_backup_traj_avilibale_ = false;
             checkFirstPartBackupTraj(exp_traj);
+            no_update_ = exp_traj.noUpdate();
         }
 
         bool isTTOnBackupTraj(const double & checkTT) const {

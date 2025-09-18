@@ -77,9 +77,12 @@ namespace fsm {
             getCommittedTrajectory(cmd_traj);
             mpc_cmd_pub_.publish(cmd_traj);
 
-            trajectory_msgs::MultiDOFJointTrajectory traj_msg;
-            getCommittedMultidofTrajectory(traj_msg);
-            multi_dof_traj_pub_.publish(traj_msg);
+            if(!planner_ptr_->getCommittedTrajectoryNoUpdate())
+            {
+                trajectory_msgs::MultiDOFJointTrajectory traj_msg;
+                getCommittedMultidofTrajectory(traj_msg);
+                multi_dof_traj_pub_.publish(traj_msg);
+            }
         }
 
         void getOneHeartBeatMsg(quadrotor_msgs::PolynomialTrajectory &heartbeat, bool &traj_finish) {

@@ -45,6 +45,7 @@ namespace super_planner {
 
         /* some flags */
         bool flag_connected_goal_{false};
+        bool no_update_{false};
         bool flag_empty_{true};
         bool flag_whole_known_free_{false};
 
@@ -65,6 +66,11 @@ namespace super_planner {
         bool connectedToGoal()const {
             return flag_connected_goal_;
         }
+
+        bool noUpdate() const {
+            return no_update_;
+        }
+        
 
         size_t getSFCSize() const {
             return sfc_.size();
@@ -118,6 +124,10 @@ namespace super_planner {
 
         void setGoalConnectedFlag(const bool & _in) {
             flag_connected_goal_ = _in;
+        }
+
+        void setNoUpdateFlag(const bool & in) {
+            no_update_ = in;
         }
 
         void setWholeTrajKnownFreeFlag(const bool & _in) {

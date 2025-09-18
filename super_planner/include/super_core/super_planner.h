@@ -127,6 +127,11 @@ namespace super_planner {
 
         Trajectory getCommittedYawTrajectory();
 
+        bool getCommittedTrajectoryNoUpdate()
+        {
+            return cmd_traj_info_.noUpdate();
+        }
+
         void getOneCommandFromTraj(StatePVAJ &pvaj,
                                    double &yaw,
                                    double &yaw_dot,

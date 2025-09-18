@@ -187,6 +187,7 @@ namespace super_planner {
         /// 1) Replan EXP traj
         ExpTraj exp_traj_info;
         TimeConsuming t_exp("t_exp", false);
+        exp_traj_info.setNoUpdateFlag(false);
         RET_CODE exp_ret_code = generateExpTraj(last_exp_traj_info_, exp_traj_info);
         time_consuming_[GENERATE_EXP_TRAJ] = t_exp.stop();
 
@@ -208,6 +209,7 @@ namespace super_planner {
         } else if (exp_ret_code == NO_NEED) {
             if (cfg_.print_log)
                 ros_ptr_->info(" -- [SUPER] in [ReplanOnce]: No need to replan a new exp traj, use last one.");
+                exp_traj_info.setNoUpdateFlag(true);
         }
 
         {

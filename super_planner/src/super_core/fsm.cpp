@@ -44,18 +44,22 @@ namespace fsm {
 
     void Fsm::callReplanOnce() {
         if (stop) {
+            cout << " -- [Fsm] callReplanOnce: Stop" << endl;
             return;
         }
 
         if (machine_state_ != FOLLOW_TRAJ) {
+            cout << " -- [Fsm] callReplanOnce: Not in FOLLOW_TRAJ state" << endl;
             return;
         }
 
         if (finish_plan) {
+            cout << " -- [Fsm] callReplanOnce: Already finish plan" << endl;
             return;
         }
 
         if (plan_from_rest_) {
+            cout << " -- [Fsm] callReplanOnce: Last plan is from rest, skip replan" << endl;
             plan_from_rest_ = false;
             return;
         }
