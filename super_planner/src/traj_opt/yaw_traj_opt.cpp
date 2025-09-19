@@ -73,8 +73,8 @@ namespace traj_opt {
             Vec3f dir = pt_g - pt_i;
             if (dir.norm() > 0.1) {
                 cur_yaw = atan2(dir.y(), dir.x());
-                // cur_yaw = atan2(-dir.y(), -dir.x());
-                normalizeNextYaw(last_yaw, cur_yaw);
+                cur_yaw = atan2(-dir.y(), -dir.x());
+                // normalizeNextYaw(last_yaw, cur_yaw);
             } else {
 //                    print(fg(color::indian_red),
 //                          " -- [SUPER] Yaw planning failed, the goal yaw is too close to the current yaw.\n");

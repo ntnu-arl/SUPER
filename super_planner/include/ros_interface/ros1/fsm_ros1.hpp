@@ -80,8 +80,10 @@ namespace fsm {
             if(!planner_ptr_->getCommittedTrajectoryNoUpdate())
             {
                 trajectory_msgs::MultiDOFJointTrajectory traj_msg;
-                getCommittedMultidofTrajectory(traj_msg);
-                multi_dof_traj_pub_.publish(traj_msg);
+                bool exec = true;
+                getCommittedMultidofTrajectory(traj_msg, exec);
+                if(exec)
+                    multi_dof_traj_pub_.publish(traj_msg);
             }
         }
 
@@ -94,12 +96,13 @@ namespace fsm {
             heartbeat.start_WT_pos = ros::Time(swt);
         }
 
-        void getCommittedMultidofTrajectory(trajectory_msgs::MultiDOFJointTrajectory& traj_msg)
+        void getCommittedMultidofTrajectory(trajectory_msgs::MultiDOFJointTrajectory& traj_msg, bool &exec)
         {
             planner_ptr_->lockCommittedTraj();
             const Trajectory pos_traj = planner_ptr_->getCommittedPositionTrajectory();
             const Trajectory yaw_traj = planner_ptr_->getCommittedYawTrajectory();
             planner_ptr_->unlockCommittedTraj();
+            exec = true;
 
             traj_msg.header.stamp = ros::Time::now();
             traj_msg.header.frame_id = "world";
@@ -112,6 +115,26 @@ namespace fsm {
             while (eval_t + 1e-4 < t_sum) {
                 Eigen::Vector3d pos = pos_traj.getPos(eval_t).cast<double>();
                 Eigen::Vector3d vel = pos_traj.getVel(eval_t).cast<double>();
+                for(int i=0; i<3; ++i)
+                {
+                    double e = pos(i);
+                    if(std::isnan(e) || std::isinf(e))
+                    {
+                        exec = false;
+                        cout << RED << "[Fsm] NaN or Inf found in trajectory" << RESET << endl;
+                        return;
+                    }
+                }
+                for(int i=0; i<3; ++i)
+                {
+                    double e = vel(i);
+                    if(std::isnan(e) || std::isinf(e))
+                    {
+                        exec = false;
+                        cout << RED << "[Fsm] NaN or Inf found in trajectory" << RESET << endl;
+                        return;
+                    }
+                }
 
                 // if(last_pos - pos).norm() < 0.01 {
                 //     eval_t += 0.05;
@@ -122,6 +145,12 @@ namespace fsm {
                 double yaw_dot = 0.0;
                 if (!yaw_traj.empty()) {
                     yaw = yaw_traj.getPos(eval_t).cast<double>()[0];
+                    if(std::isnan(yaw) || std::isinf(yaw))
+                    {
+                        exec = false;
+                        cout << RED << "[Fsm] NaN or Inf found in trajectory" << RESET << endl;
+                        return;
+                    }
                     // yaw -= M_PI;
                     // if(yaw > M_PI) yaw -= 2 * M_PI;
                     // if(yaw < -M_PI) yaw += 2 * M_PI;
