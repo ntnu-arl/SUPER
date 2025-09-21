@@ -82,9 +82,12 @@ namespace fsm {
                 trajectory_msgs::MultiDOFJointTrajectory traj_msg;
                 bool exec = true;
                 getCommittedMultidofTrajectory(traj_msg, exec);
-                if(traj_msg.points.size() <= 0)
+                if(traj_msg.points.size() > 0)
                 {
-                    cout << RED << "[Fsm] Committed trajectory empty!!" << RESET << endl;
+                    for(int i=0; i<std::min(cfg_.drop_points_count, (int)traj_msg.points.size()); ++i)
+                    {
+                        traj_msg.points.erase(traj_msg.points.begin());
+                    }
                 }
                 if(exec && traj_msg.points.size() > 0)
                     multi_dof_traj_pub_.publish(traj_msg);
