@@ -36,19 +36,26 @@
 #include "quadrotor_msgs/PositionCommand.h"
 #include "quadrotor_msgs/PolynomialTrajectory.h"
 
+#include "std_srvs/Trigger.h"
+
 #include "trajectory_msgs/MultiDOFJointTrajectory.h"
 
 
 namespace fsm {
     class FsmRos1 : public Fsm {
         ros::NodeHandle nh_;
-        ros::Subscriber goal_sub_;
+        ros::Subscriber goal_sub_, odom_sub_;
         ros::Publisher cmd_pub, mpc_cmd_pub_, path_pub_, multi_dof_traj_pub_;
         ros::Timer execution_timer_, replan_timer_, cmd_timer_;
+        ros::ServiceServer hold_pose_service_;
         quadrotor_msgs::PositionCommand pid_cmd_;
         rog_map::ROGMapROS::Ptr map_ptr_;
         quadrotor_msgs::PositionCommand latest_cmd;
         nav_msgs::Path path;
+
+        bool hold_pose_{false};
+        geometry_msgs::PoseStamped hold_pose_msg_;
+        geometry_msgs::PoseStamped current_pose_msg_;
 
         vector<quadrotor_msgs::PositionCommand> cmd_logs_;
 
@@ -448,6 +455,48 @@ namespace fsm {
             super_utils::Quatf goal_q = super_utils::Quatf{msg->pose.orientation.w, msg->pose.orientation.x,
                                                            msg->pose.orientation.y, msg->pose.orientation.z};
             setGoalPosiAndYaw(goal_p, goal_q);
+            hold_pose_ = false;
+        }
+
+        void odomCallback(const nav_msgs::OdometryConstPtr &msg) {
+            current_pose_msg_ = geometry_msgs::PoseStamped();
+            current_pose_msg_.header = msg->header;
+            current_pose_msg_.pose = msg->pose.pose;
+
+            if(hold_pose_)
+            {
+                // publish hold_pose_msg_ as a multidof trajectory
+                trajectory_msgs::MultiDOFJointTrajectory traj_msg;
+                traj_msg.header.stamp = ros::Time::now();
+                traj_msg.header.frame_id = "world";
+                trajectory_msgs::MultiDOFJointTrajectoryPoint point;
+                // Create transform
+                geometry_msgs::Transform transform;
+                transform.translation.x = hold_pose_msg_.pose.position.x;
+                transform.translation.y = hold_pose_msg_.pose.position.y;
+                transform.translation.z = hold_pose_msg_.pose.position.z;
+                
+                transform.rotation = hold_pose_msg_.pose.orientation;
+
+                point.transforms.push_back(transform);
+                point.time_from_start = ros::Duration(0.0);
+
+                traj_msg.points.push_back(point);
+                multi_dof_traj_pub_.publish(traj_msg);
+            }
+        }
+
+        bool holdPoseServiceCallback(std_srvs::Trigger::Request &req,
+                                    std_srvs::Trigger::Response &res) {
+            hold_pose_ = true;
+            hold_pose_msg_ = current_pose_msg_;
+            
+            cout << GREEN << " -- [Fsm] Hold pose at (" << hold_pose_msg_.pose.position.x << ", "
+                 << hold_pose_msg_.pose.position.y << ", " << hold_pose_msg_.pose.position.z << ")." << RESET
+                 << endl;
+
+            res.success = true;
+            return true;
         }
 
         void init(const ros::NodeHandle &nh, const std::string &cfg_path) {
@@ -470,6 +519,9 @@ namespace fsm {
                 cout << YELLOW << " -- [Fsm] CLICKGOAL ENABLE." << RESET << endl;
                 cmd_cnt++;
             }
+
+            odom_sub_ = nh_.subscribe(cfg_.odom_topic, 1, &FsmRos1::odomCallback, this);
+            hold_pose_service_ = nh_.advertiseService("hold_pose", &FsmRos1::holdPoseServiceCallback, this);
 
             if (cmd_cnt != 1) {
                 cout << YELLOW << " -- [Fsm] CMD INPUT ERROR." << RESET << endl;

@@ -49,7 +49,7 @@ namespace fsm {
         int drop_points_count;
 
         bool click_yaw_en{};
-        string cmd_topic, mpc_cmd_topic, click_goal_topic;
+        string cmd_topic, mpc_cmd_topic, click_goal_topic, odom_topic;
         double yaw_dot_max{};
 
         Config() = default;
@@ -67,6 +67,7 @@ namespace fsm {
             loader.LoadParam("fsm/click_goal_topic", click_goal_topic, string("/planning/click_goal_topic"));
             loader.LoadParam("fsm/use_time_from_start", use_time_from_start, true);
             loader.LoadParam("fsm/drop_points_count", drop_points_count, 0);
+            loader.LoadParam("fsm/odom_topic", odom_topic, string("/odom"));
 
 
             loader.LoadParam("super_planner/yaw_dot_max", yaw_dot_max, 1.0, true);
